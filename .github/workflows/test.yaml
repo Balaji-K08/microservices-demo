@@ -1,0 +1,11 @@
+name: Test Workflow
+
+# Triggers the workflow on any push (commit) to the repository
+on: [push]
+
+jobs:
+  print-message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print Status Message
+        run: echo "It's working!"

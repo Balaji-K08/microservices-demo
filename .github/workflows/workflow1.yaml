@@ -1,0 +1,16 @@
+name: build-deploy_pipeline
+on: 
+  push:
+    branches: [main]
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+  
+jobs:
+  find-build-list:
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ls -la

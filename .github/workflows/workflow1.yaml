@@ -11,6 +11,7 @@ jobs:
   find-build-list:
     runs-on: ubuntu-slim
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: ls -la
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: ls
+        uses: ls -la

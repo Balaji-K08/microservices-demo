@@ -67,6 +67,8 @@ jobs:
   build-and-push:
     name: Build and push ${{ matrix.service }}
 
+    environment: test-env
+
     needs: services_list
     if: needs.services_list.outputs.has_changes == 'true'
 

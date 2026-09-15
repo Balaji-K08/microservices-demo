@@ -62,7 +62,7 @@ jobs:
     name: Build and push ${{ matrix.service }}
 
     needs: services_list
-    if: needs.detect-changes.outputs.has_changes == 'true'
+    if: needs.services_list.outputs.has_changes == 'true'
 
     strategy:
       matrix:

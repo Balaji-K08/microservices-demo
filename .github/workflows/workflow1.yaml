@@ -13,6 +13,7 @@ jobs:
 
     outputs:
       services: ${{ steps.changed-services.outputs.services }}
+      has_changes: ${{ steps.changed-services.outputs.has_changes }}
     
     steps:
       - name: checkout

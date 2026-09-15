@@ -57,7 +57,7 @@ jobs:
 
     strategy:
       matrix:
-        service: ${{ fromJSON(needs.detect.outputs.services) }}
+        service: ${{ fromJSON(needs.services_list.outputs.services) }}
 
     runs-on: ubuntu-latest
 

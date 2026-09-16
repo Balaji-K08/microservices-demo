@@ -107,3 +107,24 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  update-config-repo:
+    name: Notify config repository
+    needs:
+      - services_list
+      - build-and-push
+    if: ${{ needs.services_list.outputs.services != '[]' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send image update event
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.CONFIG_REPO_TOKEN }}
+          repository: YOUR_GITHUB_USERNAME/YOUR_CONFIG_REPO # add vars
+          event-type: images-built
+          client-payload: |
+            {
+              "services": ${{ needs.services_list.outputs.services }},
+              "sha": "${{ github.sha }}"
+            }

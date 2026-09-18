@@ -113,7 +113,7 @@ jobs:
           # If cartservice, adds /service to the path; otherwise keeps the standard path
           context: >-
             ${{ matrix.service == 'cartservice' 
-            && format('./src/{0}/services', matrix.service) 
+            && format('./src/{0}/src', matrix.service) 
             || format('./src/{0}', matrix.service) }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}

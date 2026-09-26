@@ -65,6 +65,9 @@ jobs:
   #           -t mydockerhubuser/${{ matrix.service }}:latest \
   #           ./src/${{ matrix.service }}
 
+
+
+
   build-and-push:
     name: Build and push ${{ matrix.service }}
 
@@ -122,8 +125,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           
-
-
 
   update-config-repo:
     name: Notify config repository

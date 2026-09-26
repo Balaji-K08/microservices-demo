@@ -122,8 +122,6 @@ jobs:
           cache-to: type=gha,mode=max
           
 
-
-
   update-config-repo:
     name: Notify config repository
     environment: test-env

@@ -66,6 +66,86 @@ jobs:
 
 
 
+  # build-and-push:
+    # name: Build and push ${{ matrix.service }}
+# 
+    # environment: test-env
+# 
+    # needs: services_list
+    # if: needs.services_list.outputs.has_changes == 'true'
+# 
+    # strategy:
+      # matrix:
+        # service: ${{ fromJSON(needs.services_list.outputs.services) }}
+# 
+    # runs-on: ubuntu-latest
+# 
+    # steps:
+# 
+      # - name: Checkout repository
+        # uses: actions/checkout@v6
+# 
+      # - name: Log in to Docker Hub
+        # uses: docker/login-action@v4
+        # with:
+          # username: ${{ vars.DOCKERHUB_USERNAME }}
+          # password: ${{ secrets.DOCKERHUB_TOKEN }}
+# 
+      # - name: Generate Docker metadata
+        # id: meta
+        # uses: docker/metadata-action@v6
+        # with:
+          # images: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY }}
+          # tags: |
+            # type=raw,value=${{ matrix.service }}-${{ github.sha }}
+# 
+      # - name: Set up Docker Buildx
+        # uses: docker/setup-buildx-action@v4
+# 
+      # - name: Build and push Docker image
+      #   uses: docker/build-push-action@v7
+      #   with:
+      #     context: ./src/${{ matrix.service }}
+      #     push: true
+      #     tags: ${{ steps.meta.outputs.tags }}
+      #     labels: ${{ steps.meta.outputs.labels }}
+      # - name: Build and push Docker image
+        # uses: docker/build-push-action@v7
+        # with:
+          # If cartservice, adds /service to the path; otherwise keeps the standard path
+          # context: >-
+            # ${{ matrix.service == 'cartservice' 
+            # && format('./src/{0}/src', matrix.service) 
+            # || format('./src/{0}', matrix.service) }}
+          # push: true
+          # tags: ${{ steps.meta.outputs.tags }}
+          # labels: ${{ steps.meta.outputs.labels }}
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
+          # 
+# 
+  # update-config-repo:
+    # name: Notify config repository
+    # environment: test-env
+    # needs:
+      # - services_list
+      # - build-and-push
+    # if: ${{ needs.services_list.outputs.services != '[]' }}
+    # runs-on: ubuntu-latest
+# 
+    # steps:
+      # - name: Send image update event
+        # uses: peter-evans/repository-dispatch@v3
+        # with:
+          # token: ${{ secrets.CONFIG_REPO_TOKEN }}
+          # repository: ${{ vars.CONFIG_REPO_NAME }} # CONFIG_REPO_NAME = USERNAME/REPONAME
+          # event-type: images-built
+          # client-payload: |
+            # {
+              # "services": ${{ needs.services_list.outputs.services }},
+              # "sha": "${{ github.sha }}"
+            # }
+
   build-and-push:
     name: Build and push ${{ matrix.service }}
 
@@ -102,43 +182,62 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      # - name: Build and push Docker image
-      #   uses: docker/build-push-action@v7
-      #   with:
-      #     context: ./src/${{ matrix.service }}
-      #     push: true
-      #     tags: ${{ steps.meta.outputs.tags }}
-      #     labels: ${{ steps.meta.outputs.labels }}
-      - name: Build and push Docker image
+      - name: Build Docker image
         uses: docker/build-push-action@v7
         with:
-          # If cartservice, adds /service to the path; otherwise keeps the standard path
           context: >-
-            ${{ matrix.service == 'cartservice' 
-            && format('./src/{0}/src', matrix.service) 
+            ${{ matrix.service == 'cartservice'
+            && format('./src/{0}/src', matrix.service)
+            || format('./src/{0}', matrix.service) }}
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy Scan
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          scan-type: image
+          image-ref: ${{ steps.meta.outputs.tags }}
+          severity: CRITICAL
+          exit-code: 1
+          vuln-type: os,library
+
+      - name: Push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: >-
+            ${{ matrix.service == 'cartservice'
+            && format('./src/{0}/src', matrix.service)
             || format('./src/{0}', matrix.service) }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          
+
 
   update-config-repo:
     name: Notify config repository
+
     environment: test-env
+
     needs:
       - services_list
       - build-and-push
+
     if: ${{ needs.services_list.outputs.services != '[]' }}
+
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Send image update event
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.CONFIG_REPO_TOKEN }}
-          repository: ${{ vars.CONFIG_REPO_NAME }} # CONFIG_REPO_NAME = USERNAME/REPONAME
+          repository: ${{ vars.CONFIG_REPO_NAME }}
           event-type: images-built
           client-payload: |
             {
